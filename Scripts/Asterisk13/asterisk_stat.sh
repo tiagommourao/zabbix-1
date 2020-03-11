@@ -1,8 +1,8 @@
 #!/bin/bash
-# Отправка статистики сервера Asterisk на сервер Zabbix
+# Enviando estatísticas do servidor Asterisk para o servidor Zabbix
 
-# Массив пар строк команда Asterisk  - строка awk-программы для обработки строки
-# ответа команды
+# Matriz de pares de strings Comando Asterisk - uma string de um programa awk para processar strings
+# resposta da equipe
 aComAwk=(
  'core show uptime seconds' '/System uptime:/ { print "uptime", int($3) }'
  'core show threads' '/threads listed/ { print "threads", int($1) }'
@@ -18,29 +18,29 @@ aComAwk=(
  'iax2 show registry' '/IAX2 registrations/ { print "iax2.registrations", int($1) } BEGIN { r = 0 } /Registered/ { r += 1 } END { print "iax2.registered", int(r) }'
 )
 
-# Формирование строки команд Asterisk из строк команд массива
+# Formação de uma linha de comando do Asterisk a partir das linhas de comando da matriz
 CommandStr=$(
  for(( i = 0; i < ${#aComAwk[@]}; i += 2 )); do
   echo -n "Action: command\r\nCommand: ${aComAwk[i]}\r\n\r\n"
  done
 )
 
-# Выполнение команд Asterisk через AMI интерфейс
-ResStr=$(/bin/echo -e "Action: Login\r\nUsername: Пользователь_мониторинга\r\nSecret: Пароль_мониторинга\r\nEvents: off\r\n\r\n${CommandStr}Action: Logoff\r\n\r\n" | /usr/bin/nc 127.0.0.1 5038 2>/dev/null)
-# Статистика недоступна - возврат статуса сервиса - 'не работает'
-[ $? != 0 ] && echo 0 && exit 1
+# Executando comandos do Asterisk através da interface AMI
+ResStr = $ (/ bin / echo -e "Ação: Login \ r \ nUsername: Monitoring_user \ r \ nSecret: Monitoring_password \ r \ nEventos: desativados \ r \ n \ r \ n $ {CommandStr} Ação: Logoff \ r \ n \ r \ n "| / usr / bin / nc 127.0.0.1 5038 2> / dev / null)
+# Estatísticas não disponíveis - retornando o status do serviço - 'não funciona'
+[$? ! = 0] && echo 0 && exit 1
 
-# Индекс строки awk-программ в массиве
-iAwk=1
-# Разделитель полей во вводимой строке - для построчной обработки
-IFS=$'\n'
-# Строка вывода
+# Índice de linha awk na matriz
+iAwk = 1
+# Separador de campos na linha de entrada - para processamento linha por linha
+IFS = $ '\ n'
+# Linha de saída
 OutStr=$(
- # Построчная обработка строки результатов выполнения команд
+ # Processamento linha a linha de uma sequência de resultados de execução de comando
  for rs in $ResStr; do
-  # Строка начала подстроки результата выполнения команды
+  # A sequência do início da substring do resultado do comando
   if [ "$rs" = "Response: Follows"$'\r' ]; then
-   # Сохранение позиции начала подстроки результата в строке результатов
+   # Salvando a posição do início da substring de resultado na linha de resultado
    begin=$pos
   # Строка конца подстроки результата выполнения команды
   elif [ "$rs" = '--END COMMAND--'$'\r' ]; then
